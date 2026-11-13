@@ -25,6 +25,16 @@ class ProductRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    public function findAllHomePublished()
+    {
+        return $this->createQueryBuilder('p')
+            ->where('p.isVisible = :isVisible')
+            ->setParameter('isVisible', true)
+            ->setMaxResults(4)
+            ->getQuery()
+            ->getResult();
+    }
+
 //    /**
 //     * @return Product[] Returns an array of Product objects
 //     */

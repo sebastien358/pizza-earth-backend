@@ -27,6 +27,25 @@ class ProductController extends AbstractController
         $this->productService = $productService;
     }
 
+    #[Route('/home/list', methods: ['GET'])]
+    public function home(Request $request, SerializerInterface $serializer): Response
+    {
+        try {
+            $user = $this->getUser();
+            if (!$user) {
+                return $this->json(['error' => 'Utilisateur introuvable'], Response::HTTP_UNAUTHORIZED);
+            }
+
+            $products = $this->entityManager->getRepository(Product::class)->findAllHomePublished();
+            $dataProducts = $this->productService->productDisplay($request, $serializer, $products);
+
+            return $this->json($dataProducts, Response::HTTP_OK);
+        } catch (\Throwable $e) {
+            $this->logger->error('Erreur de la récupération des produits : ', [$e->getMessage()]);
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     #[Route('/list', methods: ['GET'])]
     public function index(Request $request, SerializerInterface $serializer): Response
     {
