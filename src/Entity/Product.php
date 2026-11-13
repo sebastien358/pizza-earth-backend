@@ -6,6 +6,7 @@ use App\Repository\ProductRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: ProductRepository::class)]
 class Product
@@ -13,25 +14,32 @@ class Product
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['products', 'product', 'category'])]
     private ?int $id = null;
 
     #[ORM\Column(type: 'string', length: 50)]
+    #[Groups(['products', 'product', 'category'])]
     private ?string $name;
 
     #[ORM\Column(type: 'string', length: 150)]
+    #[Groups(['products', 'product', 'category'])]
     private ?string $description;
 
     #[ORM\Column(type: 'decimal', precision: 5, scale: 2)]
+    #[Groups(['products', 'product', 'category'])]
     private ?string $price;
 
     #[ORM\Column(type: 'boolean')]
+    #[Groups(['products', 'product', 'category'])]
     private ?bool $isVisible = true;
 
     #[ORM\OneToMany(targetEntity: Picture::class, mappedBy: 'product', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    #[Groups(['products', 'product', 'category'])]
     public Collection $pictures;
 
     #[ORM\ManyToOne(targetEntity: Category::class, inversedBy: 'products')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['products', 'product', 'category'])]
     private ?Category $category;
 
     public function __construct()

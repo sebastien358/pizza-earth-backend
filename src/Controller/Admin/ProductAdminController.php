@@ -5,6 +5,7 @@ namespace App\Controller\Admin;
 use App\Entity\Product;
 use App\Form\ProductType;
 use App\Services\ProductService;
+use App\Services\UploadFileService;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -12,6 +13,7 @@ use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Serializer\SerializerInterface;
 
 
 #[Route('/api/admin/products')]
@@ -20,13 +22,61 @@ class ProductAdminController extends AbstractController
     private LoggerInterface $logger;
     private EntityManagerInterface $entityManager;
     private ProductService $productService;
+    private UploadFileService $uploadFileService;
 
     public function __construct(
-        LoggerInterface $logger, EntityManagerInterface $entityManager, ProductService $productService)
+        LoggerInterface $logger, EntityManagerInterface $entityManager, ProductService $productService, UploadFileService $uploadFileService)
     {
         $this->logger = $logger;
         $this->entityManager = $entityManager;
         $this->productService = $productService;
+        $this->uploadFileService = $uploadFileService;
+    }
+
+    #[Route('/list', methods: ['GET'])]
+    public function index(Request $request, SerializerInterface $serializer): Response
+    {
+        try {
+            $user = $this->getUser();
+            if (!$user) {
+                return $this->json(['error' => 'Utilisateur introuvable'], Response::HTTP_UNAUTHORIZED);
+            }
+
+            $products = $this->entityManager->getRepository(Product::class)->findAll();
+            $dataProducts = $this->productService->productDisplay($request, $serializer, $products);
+
+            return $this->json($dataProducts, Response::HTTP_OK);
+        } catch (\Throwable $e) {
+            $this->logger->error('Erreur de la récupération des produits : ', [$e->getMessage()]);
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    #[Route('/{id}/published', methods: ['PATCH'])]
+    public function published(int $id): Response
+    {
+        try {
+            $user = $this->getUser();
+            if (!$user) {
+                return $this->json(['error' => 'Utilisateur introuvable'], Response::HTTP_UNAUTHORIZED);
+            }
+
+            $product = $this->entityManager->getRepository(Product::class)->find($id);
+            if (!$product) {
+                return $this->json(['error' => 'Produit introuvable'], Response::HTTP_NOT_FOUND);
+            }
+
+            $product->setIsVisible(!$product->getIsVisible());
+            $this->entityManager->flush();
+
+            return $this->json([
+                'message' => $product->getIsVisible() ? 'Produit en ligne' : 'Produit en brouillon',
+                'isVisible' => $product->getIsVisible(),
+            ], Response::HTTP_OK);
+        } catch (\Throwable $e) {
+            $this->logger->error('Erreur de la publication : ' . $e->getMessage());
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
     #[Route('/new', methods: ['POST'])]
@@ -42,7 +92,7 @@ class ProductAdminController extends AbstractController
 
             $form = $this->createForm(ProductType::class, $product);
             $data = $request->request->all();
-            $form->submit($data);
+            $form->submit($data, false);
 
             if (!$form->isSubmitted() && !$form->isValid()) {
                 $errors = $this->getErrorMessages($form);
@@ -58,6 +108,32 @@ class ProductAdminController extends AbstractController
             return $this->json(['message' => 'Le produit a été ajouté'], Response::HTTP_CREATED);
         } catch (\Throwable $e) {
             $this->logger->error('Erreur de l\'ajout d\'un produit : ', [$e->getMessage()]);
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    #[Route('/{id}/delete', methods: ['DELETE'])]
+    public function delete(int $id, Request $request, SerializerInterface $serializer): Response
+    {
+        try {
+            $user = $this->getUser();
+            if (!$user) {
+                return $this->json(['error' => 'Utilisateur introuvable'], Response::HTTP_UNAUTHORIZED);
+            }
+
+            $product = $this->entityManager->getRepository(Product::class)->find($id);
+            if (!$product) {
+                return $this->json(['error' => 'Produit introuvable'], Response::HTTP_NOT_FOUND);
+            }
+
+            $image = $product->getPictures()->first();
+            $this->uploadFileService->deleteImage($product, $image);
+
+            $this->entityManager->flush();
+
+            return $this->json(['L\'image a été supprimée'], Response::HTTP_OK);
+        } catch (\Throwable $e) {
+            $this->logger->error('Erreur de la suppression de l\'image : ', [$e->getMessage()]);
             return $this->json(['error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

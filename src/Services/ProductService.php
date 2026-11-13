@@ -8,10 +8,37 @@ use Doctrine\ORM\EntityManagerInterface;
 class ProductService
 {
     private EntityManagerInterface $entityManager;
+    private UploadFileService $uploadFileService;
 
-    public function __construct(EntityManagerInterface $entityManager)
+    public function __construct(EntityManagerInterface $entityManager, UploadFileService $uploadFileService)
     {
         $this->entityManager = $entityManager;
+        $this->uploadFileService = $uploadFileService;
+    }
+
+    public function productDisplay($request, $serializer, $products) {
+
+        if (is_array($products)) {
+            $dataProducts = $serializer->normalize($products, 'json', ['groups' => ['products', 'category', 'picture'],
+                'circular_reference_handler' => function ($object) {
+                    return $object->getId();
+                }
+            ]);
+
+            $urlImage = $request->getSchemeAndHttpHost() . '/images/';
+
+            foreach ($dataProducts as &$product) {
+                if (isset($product['pictures'])) {
+                    foreach ($product['pictures'] as &$picture) {
+                        $picture['url'] = $urlImage . basename($picture['url']);
+                    }
+                }
+            }
+            unset($product);
+            return $dataProducts;
+        }
+
+      return [];
     }
 
     public function ProductImage($product, $image)
@@ -22,9 +49,10 @@ class ProductService
             throw new \Exception('La taille de l\'image est trop grande'. $image->getClientOriginalName());
         }
 
-        $picture = new Picture();
+        $img = $this->uploadFileService->upload($image);
 
-        $picture->setUrl($image);
+        $picture = new Picture();
+        $picture->setUrl($img);
         $picture->setProduct($product);
         $product->addPicture($picture);
         $this->entityManager->persist($picture);
