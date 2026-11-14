@@ -58,7 +58,28 @@ class ProductAdminController extends AbstractController
         }
     }
 
-    #[Route('/show/{id}', methods: ['GET'])]
+    #[Route('/search', methods: ['GET'])]
+    public function search(Request $request, SerializerInterface $serializer): Response
+    {
+        try {
+            $user = $this->getUser();
+            if (!$user) {
+                return $this->json(['error' => 'Utilisateur introuvable'], Response::HTTP_UNAUTHORIZED);
+            }
+
+            $search = $request->query->getString('search');
+
+            $products = $this->entityManager->getRepository(Product::class)->findAllSearch($search);
+            $dataProducts = $this->productService->productDisplay($request, $serializer, $products);
+
+            return $this->json($dataProducts, Response::HTTP_OK);
+        } catch (\Throwable $e) {
+            $this->logger->error('Erreur de la récupération des produits : ', [$e->getMessage()]);
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    #[Route('/{id}', methods: ['GET'])]
     public function id(int $id, Request $request, SerializerInterface $serializer): Response
     {
         try {
@@ -72,27 +93,6 @@ class ProductAdminController extends AbstractController
                 return $this->json(['error' => 'Produit introuvable'], Response::HTTP_NOT_FOUND);
             }
 
-            $dataProducts = $this->productService->productDisplay($request, $serializer, $products);
-
-            return $this->json($dataProducts, Response::HTTP_OK);
-        } catch (\Throwable $e) {
-            $this->logger->error('Erreur de la récupération des produits : ', [$e->getMessage()]);
-            return $this->json(['error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    #[Route('/search', methods: ['GET'])]
-    public function search(Request $request, SerializerInterface $serializer): Response
-    {
-        try {
-            $user = $this->getUser();
-            if (!$user) {
-                return $this->json(['error' => 'Utilisateur introuvable'], Response::HTTP_UNAUTHORIZED);
-            }
-
-            $search = $request->query->getString('search');
-
-            $products = $this->entityManager->getRepository(Product::class)->findAllSearch($search);
             $dataProducts = $this->productService->productDisplay($request, $serializer, $products);
 
             return $this->json($dataProducts, Response::HTTP_OK);
@@ -163,7 +163,7 @@ class ProductAdminController extends AbstractController
     }
 
     #[Route('/{id}/delete', methods: ['DELETE'])]
-    public function delete(int $id, Request $request, SerializerInterface $serializer): Response
+    public function delete(int $id): Response
     {
         try {
             $user = $this->getUser();
@@ -177,13 +177,100 @@ class ProductAdminController extends AbstractController
             }
 
             $image = $product->getPictures()->first();
-            $this->uploadFileService->deleteImage($product, $image);
+            $this->uploadFileService->deleteProduct($product, $image);
 
             $this->entityManager->flush();
 
-            return $this->json(['L\'image a été supprimée'], Response::HTTP_OK);
+            return $this->json(['Le produit a été supprimé'], Response::HTTP_OK);
         } catch (\Throwable $e) {
-            $this->logger->error('Erreur de la suppression de l\'image : ', [$e->getMessage()]);
+            $this->logger->error('Erreur de la suppression d\'un produit : ', [$e->getMessage()]);
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    #[Route('/{id}/image', methods: ['DELETE'])]
+    public function deleteImage(int $id): Response
+    {
+        try {
+            $user = $this->getUser();
+            if (!$user) {
+                return $this->json(['error' => 'Utilisateur introuvable'], Response::HTTP_UNAUTHORIZED);
+            }
+
+            $product = $this->entityManager->getRepository(Product::class)->find($id);
+            if (!$product) {
+                return $this->json(['error' => 'Produit introuvable'], Response::HTTP_NOT_FOUND);
+            }
+
+            $image = $product->getPictures()->first();
+            $this->uploadFileService->deleteImage($image);
+
+            $this->entityManager->flush();
+
+            return $this->json(['Le produit a été supprimé'], Response::HTTP_OK);
+        } catch (\Throwable $e) {
+            $this->logger->error('Erreur de la suppression d\'un produit : ', [$e->getMessage()]);
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    #[Route('/{id}/edit', methods: ['PATCH'])]
+    public function edit(int $id, Request $request): Response
+    {
+        try {
+            $user = $this->getUser();
+            if (!$user) {
+                return $this->json(['error' => 'Utilisateur introuvable'], Response::HTTP_UNAUTHORIZED);
+            }
+
+            $product = $this->entityManager->getRepository(Product::class)->find($id);
+            if (!$product) {
+                return $this->json(['error' => 'Produit introuvable'], Response::HTTP_NOT_FOUND);
+            }
+
+            $form = $this->createForm(ProductType::class, $product);
+            $data = $request->request->all();
+            $form->submit($data);
+
+            if (!$form->isSubmitted() && !$form->isValid()) {
+                $errors = $this->getErrorMessages($form);
+                return $this->json(['error' => $errors], Response::HTTP_BAD_REQUEST);
+            }
+
+            $image = $request->files->get('picture') ?? null;
+            $this->productService->ProductImage($product, $image);
+
+            $this->entityManager->flush();
+
+            return $this->json(['message' => 'Le produit a été modifié'], Response::HTTP_CREATED);
+        } catch (\Throwable $e) {
+            $this->logger->error('Erreur la modification d\'un produit : ', [$e->getMessage()]);
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    #[Route('/{id}/edit/image', methods: ['PATCH'])]
+    public function editImage(int $id, Request $request): Response
+    {
+        try {
+            $user = $this->getUser();
+            if (!$user) {
+                return $this->json(['error' => 'Utilisateur introuvable'], Response::HTTP_UNAUTHORIZED);
+            }
+
+            $product = $this->entityManager->getRepository(Product::class)->find($id);
+            if (!$product) {
+                return $this->json(['error' => 'Produit introuvable'], Response::HTTP_NOT_FOUND);
+            }
+
+            $image = $request->files->get('picture') ?? null;
+            $this->productService->ProductImage($product, $image);
+
+            $this->entityManager->flush();
+
+            return $this->json(['message' => 'Le produit a été modifié'], Response::HTTP_CREATED);
+        } catch (\Throwable $e) {
+            $this->logger->error('Erreur la modification d\'un produit : ', [$e->getMessage()]);
             return $this->json(['error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

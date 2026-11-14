@@ -23,7 +23,7 @@ class UploadFileService
         return $filename;
     }
 
-    public function deleteImage($product, $image)
+    public function deleteProduct($product, $image)
     {
         if (!$image) return;
 
@@ -34,5 +34,15 @@ class UploadFileService
         }
 
         $this->entityManager->remove($product);
+    }
+
+    public function deleteImage($image)
+    {
+        $filename = $this->targetDirectory . '/' . $image->getUrl();
+        if (file_exists($filename)) {
+            unlink($filename);
+        }
+
+        $this->entityManager->remove($image);
     }
 }
