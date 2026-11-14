@@ -45,6 +45,56 @@ class ProductAdminController extends AbstractController
             $products = $this->entityManager->getRepository(Product::class)->findAll();
             $dataProducts = $this->productService->productDisplay($request, $serializer, $products);
 
+            $countProducts = $this->entityManager->getRepository(Product::class)->countProducts();
+
+            return $this->json([
+                'products' => $dataProducts,
+                'count' => (int) $countProducts
+            ], Response::HTTP_OK);
+
+        } catch (\Throwable $e) {
+            $this->logger->error('Erreur de la récupération des produits : ', [$e->getMessage()]);
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    #[Route('/show/{id}', methods: ['GET'])]
+    public function id(int $id, Request $request, SerializerInterface $serializer): Response
+    {
+        try {
+            $user = $this->getUser();
+            if (!$user) {
+                return $this->json(['error' => 'Utilisateur introuvable'], Response::HTTP_UNAUTHORIZED);
+            }
+
+            $products = $this->entityManager->getRepository(Product::class)->find($id);
+            if (!$products) {
+                return $this->json(['error' => 'Produit introuvable'], Response::HTTP_NOT_FOUND);
+            }
+
+            $dataProducts = $this->productService->productDisplay($request, $serializer, $products);
+
+            return $this->json($dataProducts, Response::HTTP_OK);
+        } catch (\Throwable $e) {
+            $this->logger->error('Erreur de la récupération des produits : ', [$e->getMessage()]);
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    #[Route('/search', methods: ['GET'])]
+    public function search(Request $request, SerializerInterface $serializer): Response
+    {
+        try {
+            $user = $this->getUser();
+            if (!$user) {
+                return $this->json(['error' => 'Utilisateur introuvable'], Response::HTTP_UNAUTHORIZED);
+            }
+
+            $search = $request->query->getString('search');
+
+            $products = $this->entityManager->getRepository(Product::class)->findAllSearch($search);
+            $dataProducts = $this->productService->productDisplay($request, $serializer, $products);
+
             return $this->json($dataProducts, Response::HTTP_OK);
         } catch (\Throwable $e) {
             $this->logger->error('Erreur de la récupération des produits : ', [$e->getMessage()]);

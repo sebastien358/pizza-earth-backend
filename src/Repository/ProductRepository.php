@@ -16,15 +16,6 @@ class ProductRepository extends ServiceEntityRepository
         parent::__construct($registry, Product::class);
     }
 
-    public function findAllPublished()
-    {
-        return $this->createQueryBuilder('p')
-            ->where('p.isVisible = :isVisible')
-            ->setParameter('isVisible', true)
-            ->getQuery()
-            ->getResult();
-    }
-
     public function findAllHomePublished()
     {
         return $this->createQueryBuilder('p')
@@ -33,6 +24,34 @@ class ProductRepository extends ServiceEntityRepository
             ->setMaxResults(4)
             ->getQuery()
             ->getResult();
+    }
+
+    public function findAllPublished(int $offset, int $limit)
+    {
+        return $this->createQueryBuilder('p')
+            ->where('p.isVisible = :isVisible')
+            ->setParameter('isVisible', true)
+            ->setFirstResult($offset)
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function findAllSearch(string $search)
+    {
+        return $this->createQueryBuilder('p')
+            ->where('p.name LIKE :search')
+            ->setParameter('search', '%' . $search . '%')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function countProducts()
+    {
+        return $this->createQueryBuilder('p')
+            ->select('COUNT(p)')
+            ->getQuery()
+            ->getSingleScalarResult();
     }
 
 //    /**

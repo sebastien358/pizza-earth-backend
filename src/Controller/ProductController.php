@@ -31,11 +31,6 @@ class ProductController extends AbstractController
     public function home(Request $request, SerializerInterface $serializer): Response
     {
         try {
-            $user = $this->getUser();
-            if (!$user) {
-                return $this->json(['error' => 'Utilisateur introuvable'], Response::HTTP_UNAUTHORIZED);
-            }
-
             $products = $this->entityManager->getRepository(Product::class)->findAllHomePublished();
             $dataProducts = $this->productService->productDisplay($request, $serializer, $products);
 
@@ -50,7 +45,10 @@ class ProductController extends AbstractController
     public function index(Request $request, SerializerInterface $serializer): Response
     {
         try {
-            $products = $this->entityManager->getRepository(Product::class)->findAllPublished();
+            $offset = $request->query->getInt('offset');
+            $limit = $request->query->getInt('limit');
+
+            $products = $this->entityManager->getRepository(Product::class)->findAllPublished($offset, $limit);
             $dataProducts = $this->productService->productDisplay($request, $serializer, $products);
 
             return $this->json($dataProducts, Response::HTTP_OK);
