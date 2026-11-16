@@ -51,6 +51,30 @@ class OrderAdminController extends AbstractController
         }
     }
 
+    #[Route('/orders/{id}/delete', methods: ['DELETE'])]
+    public function delete(int $id): Response
+    {
+        try {
+            $user = $this->getUser();
+            if (!$user) {
+                return $this->json(['erreur' => 'Utilisateur introuvable'], Response::HTTP_UNAUTHORIZED);
+            }
+
+            $order = $this->entityManager->getRepository(Order::class)->find($id);
+            if (!$order) {
+                return $this->json(['error' => 'Aucune commandes'], Response::HTTP_NOT_FOUND);
+            }
+
+            $this->entityManager->remove($order);
+            $this->entityManager->flush();
+
+            return $this->json(['message' => 'Le status a été modifié'], Response::HTTP_OK);
+        } catch (\Throwable $e) {
+            $this->logger->error('Erreur de la suppression de la commande : ', [$e->getMessage()]);
+            return $this->json(['erreur' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     #[Route('/orders/{id}/status/{status}', methods: ['PATCH'])]
     public function status(int $id, string $status, Request $request): Response
     {
