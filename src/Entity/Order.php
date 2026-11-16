@@ -7,6 +7,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Mapping\HasLifecycleCallbacks;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: OrderRepository::class)]
 #[ORM\Table(name: '`order`')]
@@ -17,52 +18,70 @@ class Order
     public const STATUS_VALIDATED = 'validated';
     public const STATUS_CANCELLED = 'cancelled';
 
+    public const DELIVERY_MODE_DELIVERY = 'delivery'; // Livraison
+    public const DELIVERY_MODE_PICKUP = 'pickup';     // Retrait
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['orders', 'user', 'items'])]
     private ?int $id = null;
 
     #[ORM\Column(type: 'string', length: 100)]
+    #[Groups(['orders', 'user', 'items'])]
     private ?string $name = null;
 
     #[ORM\Column(type: 'string', length: 180)]
+    #[Groups(['orders', 'user', 'items'])]
     private ?string $email = null;
 
     #[ORM\Column(type: 'string', length: 20)]
+    #[Groups(['orders', 'user', 'items'])]
     private ?string $phone = null;
 
     #[ORM\Column(type: 'string', length: 10)]
+    #[Groups(['orders', 'user', 'items'])]
     private ?string $deliveryMode = null;
 
     #[ORM\Column(type: 'string', length: 150, nullable: true)]
+    #[Groups(['orders', 'user', 'items'])]
     private ?string $address = null;
 
     #[ORM\Column(type: 'string', length: 150, nullable: true)]
+    #[Groups(['orders', 'user', 'items'])]
     private ?string $complementAddress = null;
 
     #[ORM\Column(type: 'string', length: 5, nullable: true)]
+    #[Groups(['orders', 'user', 'items'])]
     private ?string $postalCode = null;
 
     #[ORM\Column(length: 50, nullable: true)]
+    #[Groups(['orders', 'user', 'items'])]
     private ?string $city = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['orders', 'user', 'items'])]
     private ?string $deliveryInstructions = null;
 
     #[ORM\Column(length: 20)]
+    #[Groups(['orders', 'user', 'items'])]
     private ?string $status = self::STATUS_PENDING;
 
     #[ORM\Column(type: 'float')]
+    #[Groups(['orders', 'user', 'items'])]
     private ?float $total = null;
 
     #[ORM\Column(type: 'datetime')]
+    #[Groups(['orders', 'user', 'items'])]
     private ?\DateTimeInterface $createdAt = null;
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'orders')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['orders', 'user', 'items'])]
     private ?User $user = null;
 
     #[ORM\OneToMany(targetEntity: OrderItem::class, mappedBy: 'order', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    #[Groups(['orders', 'user', 'items'])]
     private Collection $orderItems;
 
     public function __construct()
