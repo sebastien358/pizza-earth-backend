@@ -42,9 +42,14 @@ class Product
     #[Groups(['products', 'product', 'category'])]
     private ?Category $category;
 
+    #[ORM\OneToMany(targetEntity: OrderItem::class, mappedBy: 'product', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    #[Groups(['products', 'product', 'category'])]
+    private Collection $orderItems;
+
     public function __construct()
     {
         $this->pictures = new ArrayCollection();
+        $this->orderItems = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -130,6 +135,30 @@ class Product
         if ($this->pictures->removeElement($picture)) {
             if ($picture->getProduct() === $this) {
                 $picture->setProduct(null);
+            }
+        }
+        return $this;
+    }
+
+    public function getOrderItems(): Collection
+    {
+        return $this->orderItems;
+    }
+
+    public function addOrderItem(OrderItem $orderItem): self
+    {
+        if (!$this->orderItems->contains($orderItem)) {
+            $this->orderItems[] = $orderItem;
+            $orderItem->setProduct($this);
+        }
+        return $this;
+    }
+
+    public function removeOrderItem(OrderItem $orderItem): self
+    {
+        if ($this->orderItems->removeElement($orderItem)) {
+            if ($orderItem->getProduct() === $this) {
+                $orderItem->setProduct(null);
             }
         }
         return $this;
