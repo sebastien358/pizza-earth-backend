@@ -52,6 +52,9 @@ class Order
     #[ORM\Column(length: 20)]
     private ?string $status = self::STATUS_PENDING;
 
+    #[ORM\Column(type: 'float')]
+    private ?float $total = null;
+
     #[ORM\Column(type: 'datetime')]
     private ?\DateTimeInterface $createdAt = null;
 
@@ -196,6 +199,18 @@ class Order
     public function setStatus(string $status): self
     {
         $this->status = $status;
+
+        return $this;
+    }
+
+    public function getTotal(): ?float
+    {
+        return $this->total;
+    }
+
+    public function setTotal(float $total): self
+    {
+        $this->total = $total;
 
         return $this;
     }
