@@ -71,6 +71,9 @@ class Order
     #[Groups(['orders', 'user', 'items'])]
     private ?float $total = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $paymentIntentId = null;
+
     #[ORM\Column(type: 'datetime')]
     #[Groups(['orders', 'user', 'items'])]
     private ?\DateTimeInterface $createdAt = null;
@@ -231,6 +234,17 @@ class Order
     {
         $this->total = $total;
 
+        return $this;
+    }
+
+    public function getPaymentIntentId(): ?string
+    {
+        return $this->paymentIntentId;
+    }
+
+    public function setPaymentIntentId(?string $paymentIntentId): self
+    {
+        $this->paymentIntentId = $paymentIntentId;
         return $this;
     }
 

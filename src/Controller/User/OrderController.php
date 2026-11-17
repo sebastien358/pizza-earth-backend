@@ -70,6 +70,7 @@ class OrderController extends AbstractController
             $itemsData = $data['items'] ?? [];
 
             $order = new Order();
+
             $order->setUser($user);
             $order->setName($formData['name'] ?? '');
             $order->setEmail($formData['email'] ?? '');
@@ -80,6 +81,7 @@ class OrderController extends AbstractController
             $order->setPostalCode($formData['postalCode'] ?? null);
             $order->setCity($formData['city'] ?? null);
             $order->setDeliveryInstructions($formData['deliveryInstructions'] ?? null);
+            $order->setPaymentIntentId($formData['payment_intent_id'] ?? null);
 
             $total = 0;
             foreach ($itemsData as $item) {

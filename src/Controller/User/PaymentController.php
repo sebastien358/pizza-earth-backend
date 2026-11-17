@@ -115,4 +115,29 @@ class PaymentController extends AbstractController
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+    #[Route('/payment/refund', name: 'user_payment_refund', methods: ['POST'])]
+    public function refund(Request $request): Response
+    {
+        try {
+            $data = json_decode($request->getContent(), true);
+
+            if (empty($data['payment_intent_id'])) {
+                return $this->json(['error' => 'Pas de payment_intent_id'], 400);
+            }
+
+            $refund = $this->stripe->refunds->create([
+                'payment_intent' => $data['payment_intent_id'],
+            ]);
+
+            return $this->json([
+                'type' => 'SUCCESS_REFUND',
+                'refund_id' => $refund->id,
+                'status' => $refund->status,
+            ]);
+        } catch (\Throwable $e) {
+            $this->logger->error('Erreur remboursement : ' . $e->getMessage());
+            return $this->json(['error' => $e->getMessage()], 500);
+        }
+    }
 }
