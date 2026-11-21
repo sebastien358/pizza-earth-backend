@@ -31,7 +31,9 @@ class ProductController extends AbstractController
     public function home(Request $request, SerializerInterface $serializer): Response
     {
         try {
-            $products = $this->entityManager->getRepository(Product::class)->findAllHomePublished();
+            $limit = $request->query->getInt('limit');
+
+            $products = $this->entityManager->getRepository(Product::class)->findAllHomePublished($limit);
             $dataProducts = $this->productService->productDisplay($request, $serializer, $products);
 
             return $this->json($dataProducts, Response::HTTP_OK);

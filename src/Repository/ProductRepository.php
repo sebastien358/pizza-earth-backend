@@ -16,12 +16,12 @@ class ProductRepository extends ServiceEntityRepository
         parent::__construct($registry, Product::class);
     }
 
-    public function findAllHomePublished()
+    public function findAllHomePublished(int $limit)
     {
         return $this->createQueryBuilder('p')
             ->where('p.isVisible = :isVisible')
             ->setParameter('isVisible', true)
-            ->setMaxResults(4)
+            ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
     }
