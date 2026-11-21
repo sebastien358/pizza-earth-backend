@@ -42,14 +42,21 @@ class ProductAdminController extends AbstractController
                 return $this->json(['error' => 'Utilisateur introuvable'], Response::HTTP_UNAUTHORIZED);
             }
 
-            $products = $this->entityManager->getRepository(Product::class)->findAll();
+            $current = $request->query->getInt('current');
+            $limit = $request->query->getInt('limit');
+
+            if ($current < 1) $current = 1;
+            if ($limit <= 0) $limit = 4;
+
+            $products = $this->entityManager->getRepository(Product::class)->findAllProductsAdmin($current, $limit);
             $dataProducts = $this->productService->productDisplay($request, $serializer, $products);
 
             $countProducts = $this->entityManager->getRepository(Product::class)->countProducts();
 
             return $this->json([
                 'products' => $dataProducts,
-                'count' => (int) $countProducts
+                'count' => (int) $countProducts,
+                'pages' => (int) ceil($countProducts / $limit)
             ], Response::HTTP_OK);
 
         } catch (\Throwable $e) {
@@ -67,7 +74,8 @@ class ProductAdminController extends AbstractController
                 return $this->json(['error' => 'Utilisateur introuvable'], Response::HTTP_UNAUTHORIZED);
             }
 
-            $search = $request->query->getString('search');
+            $searchProducts = $request->query->getString('search');
+            $search = strtolower($searchProducts);
 
             $products = $this->entityManager->getRepository(Product::class)->findAllSearch($search);
             $dataProducts = $this->productService->productDisplay($request, $serializer, $products);

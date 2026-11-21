@@ -27,7 +27,7 @@ class OrderAdminController extends AbstractController
     }
 
     #[Route('/orders', methods: ['GET'])]
-    public function index(SerializerInterface $serializer): Response
+    public function index(Request $request, SerializerInterface $serializer): Response
     {
         try {
             $user = $this->getUser();
@@ -35,16 +35,44 @@ class OrderAdminController extends AbstractController
                 return $this->json(['erreur' => 'Utilisateur introuvable'], Response::HTTP_UNAUTHORIZED);
             }
 
-            $orders = $this->entityManager->getRepository(Order::class)->findAllAdminOrders();
-            if (!$orders) {
-                return $this->json(['error' => 'Aucune commandes'], Response::HTTP_BAD_REQUEST);
-            }
+            $current = $request->query->getInt('current', 1);
+            $limit = $request->query->getInt('limit');
 
+            if ($current < 1) $current = 1;
+            if ($limit <= 0) $limit = 4;
+
+            $orders = $this->entityManager->getRepository(Order::class)->findAllAdminOrders($current, $limit);
             $dataOrders = $this->orderService->ordersDisplay($serializer, $orders);
 
+            $count = $this->entityManager->getRepository(Order::class)->countOrdersAdmin();
+
             return $this->json([
-                'orders' => $dataOrders
+                'orders' => $dataOrders,
+                'count' => (int) $count,
+                'pages' => (int) ceil($count / $limit)
             ], Response::HTTP_OK);
+        } catch (\Throwable $e) {
+            $this->logger->error('Erreur de la récupération des commandes des clients: ', [$e->getMessage()]);
+            return $this->json(['erreur' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    #[Route('/orders/search', methods: ['GET'])]
+    public function search(SerializerInterface $serializer, Request $request): Response
+    {
+        try {
+            $user = $this->getUser();
+            if (!$user) {
+                return $this->json(['erreur' => 'Utilisateur introuvable'], Response::HTTP_UNAUTHORIZED);
+            }
+
+            $searchOrders = $request->query->getString('search');
+            $search = strtolower($searchOrders);
+
+            $orders = $this->entityManager->getRepository(Order::class)->findAllAdminOrdersSearch($search);
+            $dataOrders = $this->orderService->ordersDisplay($serializer, $orders);
+
+            return $this->json(['orders' => $dataOrders], Response::HTTP_OK);
         } catch (\Throwable $e) {
             $this->logger->error('Erreur de la récupération des commandes des clients: ', [$e->getMessage()]);
             return $this->json(['erreur' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);

@@ -16,6 +16,16 @@ class ProductRepository extends ServiceEntityRepository
         parent::__construct($registry, Product::class);
     }
 
+    public function findAllProductsAdmin($current, $limit)
+    {
+        return $this->createQueryBuilder('p')
+            ->orderBy('p.id', 'DESC')
+            ->setFirstResult(($current - 1) * $limit)
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
     public function findAllHomePublished(int $limit)
     {
         return $this->createQueryBuilder('p')
@@ -40,8 +50,8 @@ class ProductRepository extends ServiceEntityRepository
     public function findAllSearch(string $search)
     {
         return $this->createQueryBuilder('p')
-            ->where('p.name LIKE :search')
-            ->setParameter('search', '%' . $search . '%')
+            ->where('LOWER(p.name) LIKE :search')
+            ->setParameter('search', '%' . strtolower($search) . '%')
             ->getQuery()
             ->getResult();
     }

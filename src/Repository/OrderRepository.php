@@ -27,12 +27,34 @@ class OrderRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    public function findAllAdminOrders()
+    public function findAllAdminOrders(int $current, int $limit)
     {
         return $this->createQueryBuilder('o')
             ->orderBy('o.createdAt', 'DESC')
+            ->setFirstResult(($current - 1) * $limit)
+            ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
+    }
+
+    public function findAllAdminOrdersSearch(string $search)
+    {
+        return $this->createQueryBuilder('o')
+            ->where('LOWER(o.name) LIKE :search')
+            ->orWhere('LOWER(o.email) LIKE :search')
+            ->orWhere('LOWER(o.phone) LIKE :search')
+            ->setParameter('search', '%' . strtolower($search) . '%')
+            ->orderBy('o.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function countOrdersAdmin()
+    {
+        return $this->createQueryBuilder('o')
+            ->select('COUNT(o.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
     }
 
 //    /**
