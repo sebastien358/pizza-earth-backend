@@ -4,22 +4,25 @@ namespace App\Services;
 
 use App\Entity\Picture;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Serializer\SerializerInterface;
 
 class ProductService
 {
     private EntityManagerInterface $entityManager;
     private UploadFileService $uploadFileService;
+    private SerializerInterface $serializer;
 
-    public function __construct(EntityManagerInterface $entityManager, UploadFileService $uploadFileService)
+    public function __construct(EntityManagerInterface $entityManager, UploadFileService $uploadFileService, SerializerInterface $serializer)
     {
         $this->entityManager = $entityManager;
         $this->uploadFileService = $uploadFileService;
+        $this->serializer = $serializer;
     }
 
-    public function productDisplay($request, $serializer, $products) {
+    public function productDisplay($products, $request) {
 
         if (is_array($products)) {
-            $dataProducts = $serializer->normalize($products, 'json', ['groups' => ['products', 'category', 'picture'],
+            $dataProducts = $this->serializer->normalize($products, 'json', ['groups' => ['products', 'category', 'picture'],
                 'circular_reference_handler' => function ($object) {
                     return $object->getId();
                 }
@@ -37,7 +40,7 @@ class ProductService
             unset($product);
             return $dataProducts;
         } else {
-            $dataProducts = $serializer->normalize($products, 'json', ['groups' => ['products', 'category', 'picture'],
+            $dataProducts = $this->serializer->normalize($products, 'json', ['groups' => ['products', 'category', 'picture'],
                 'circular_reference_handler' => function ($object) {
                     return $object->getId();
                 }

@@ -14,8 +14,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapQueryParameter;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Serializer\SerializerInterface;
-
 
 #[Route('/api/admin/products')]
 class ProductAdminController extends AbstractController
@@ -35,7 +33,7 @@ class ProductAdminController extends AbstractController
     }
 
     #[Route('/list', methods: ['GET'])]
-    public function index(#[MapQueryParameter(name: 'current')] int $current = 1, #[MapQueryParameter(name: 'limit')] int $limit = 4,Request $request, SerializerInterface $serializer): Response
+    public function index(#[MapQueryParameter(name: 'current')] int $current = 1, #[MapQueryParameter(name: 'limit')] int $limit = 4, Request $request): Response
     {
         try {
             $user = $this->getUser();
@@ -47,8 +45,7 @@ class ProductAdminController extends AbstractController
             if ($limit <= 0) $limit = 4;
 
             $products = $this->entityManager->getRepository(Product::class)->findAllProductsAdmin($current, $limit);
-            $dataProducts = $this->productService->productDisplay($request, $serializer, $products);
-
+            $dataProducts = $this->productService->productDisplay($products, $request);
             $countProducts = $this->entityManager->getRepository(Product::class)->countProducts();
 
             return $this->json([
@@ -56,7 +53,6 @@ class ProductAdminController extends AbstractController
                 'count' => (int) $countProducts,
                 'pages' => (int) ceil($countProducts / $limit)
             ], Response::HTTP_OK);
-
         } catch (\Throwable $e) {
             $this->logger->error('Erreur de la récupération des produits : ', [$e->getMessage()]);
             return $this->json(['error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -64,7 +60,7 @@ class ProductAdminController extends AbstractController
     }
 
     #[Route('/search', methods: ['GET'])]
-    public function search(#[MapQueryParameter(name: 'search')] string $search = "", Request $request, SerializerInterface $serializer): Response
+    public function search(#[MapQueryParameter(name: 'search')] string $search = "", Request $request): Response
     {
         try {
             $user = $this->getUser();
@@ -73,19 +69,18 @@ class ProductAdminController extends AbstractController
             }
 
             $searchParams = strtolower($search);
-
             $products = $this->entityManager->getRepository(Product::class)->findAllSearch($searchParams);
-            $dataProducts = $this->productService->productDisplay($request, $serializer, $products);
+            $dataProducts = $this->productService->productDisplay($products, $request);
 
             return $this->json($dataProducts, Response::HTTP_OK);
         } catch (\Throwable $e) {
-            $this->logger->error('Erreur de la récupération des produits : ', [$e->getMessage()]);
+            $this->logger->error('Erreur de la recherche des produits : ', [$e->getMessage()]);
             return $this->json(['error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
     #[Route('/{id}', methods: ['GET'])]
-    public function id(int $id, Request $request, SerializerInterface $serializer): Response
+    public function id(int $id, Request $request): Response
     {
         try {
             $user = $this->getUser();
@@ -98,7 +93,7 @@ class ProductAdminController extends AbstractController
                 return $this->json(['error' => 'Produit introuvable'], Response::HTTP_NOT_FOUND);
             }
 
-            $dataProducts = $this->productService->productDisplay($request, $serializer, $products);
+            $dataProducts = $this->productService->productDisplay($products, $request);
 
             return $this->json($dataProducts, Response::HTTP_OK);
         } catch (\Throwable $e) {

@@ -9,8 +9,8 @@ use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Attribute\MapQueryParameter;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Serializer\SerializerInterface;
 
 #[Route('/api/products')]
 class ProductController extends AbstractController
@@ -28,13 +28,14 @@ class ProductController extends AbstractController
     }
 
     #[Route('/home/list', methods: ['GET'])]
-    public function home(Request $request, SerializerInterface $serializer): Response
+    public function home(#[MapQueryParameter(name: 'limit')] int $limit = 4, Request $request): Response
     {
         try {
-            $limit = $request->query->getInt('limit');
-
+            if ($limit <= 0) {
+                $limit = 4;
+            }
             $products = $this->entityManager->getRepository(Product::class)->findAllHomePublished($limit);
-            $dataProducts = $this->productService->productDisplay($request, $serializer, $products);
+            $dataProducts = $this->productService->productDisplay($products, $request);
 
             return $this->json($dataProducts, Response::HTTP_OK);
         } catch (\Throwable $e) {
@@ -44,14 +45,13 @@ class ProductController extends AbstractController
     }
 
     #[Route('/list', methods: ['GET'])]
-    public function index(Request $request, SerializerInterface $serializer): Response
-    {
+    public function index(#[MapQueryParameter(name: 'offset')] int $offset = 0, #[MapQueryParameter(name: 'limit')] int $limit = 4, Request $request): Response {
         try {
-            $offset = $request->query->getInt('offset');
-            $limit = $request->query->getInt('limit');
-
+            if ($limit <= 0) {
+                $limit = 4;
+            }
             $products = $this->entityManager->getRepository(Product::class)->findAllPublished($offset, $limit);
-            $dataProducts = $this->productService->productDisplay($request, $serializer, $products);
+            $dataProducts = $this->productService->productDisplay($products, $request);
 
             return $this->json($dataProducts, Response::HTTP_OK);
         } catch (\Throwable $e) {

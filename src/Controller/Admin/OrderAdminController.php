@@ -8,11 +8,9 @@ use App\Services\OrderService;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapQueryParameter;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Serializer\SerializerInterface;
 
 #[Route('/api/admin')]
 class OrderAdminController extends AbstractController
@@ -29,7 +27,7 @@ class OrderAdminController extends AbstractController
     }
 
     #[Route('/orders', methods: ['GET'])]
-    public function index(#[MapQueryParameter(name: 'current')] int $current = 1, #[MapQueryParameter(name: 'limit')] int $limit = 4, SerializerInterface $serializer): Response
+    public function index(#[MapQueryParameter(name: 'current')] int $current = 1, #[MapQueryParameter(name: 'limit')] int $limit = 4): Response
     {
         try {
             $user = $this->getUser();
@@ -41,7 +39,7 @@ class OrderAdminController extends AbstractController
             if ($limit <= 0) $limit = 4;
 
             $orders = $this->entityManager->getRepository(Order::class)->findAllAdminOrders($current, $limit);
-            $dataOrders = $this->orderService->ordersDisplay($orders, $serializer);
+            $dataOrders = $this->orderService->ordersDisplay($orders);
 
             $count = $this->entityManager->getRepository(Order::class)->countOrdersAdmin();
 
@@ -58,7 +56,7 @@ class OrderAdminController extends AbstractController
     }
 
     #[Route('/orders/search', methods: ['GET'])]
-    public function search(#[MapQueryParameter(name: 'search')] string $search = "", SerializerInterface $serializer, Request $request): Response
+    public function search(#[MapQueryParameter(name: 'search')] string $search = ""): Response
     {
         try {
             $user = $this->getUser();
@@ -69,7 +67,7 @@ class OrderAdminController extends AbstractController
             $searchParams = strtolower($search);
 
             $orders = $this->entityManager->getRepository(Order::class)->findAllAdminOrdersSearch($searchParams);
-            $dataOrders = $this->orderService->ordersDisplay($orders, $serializer);
+            $dataOrders = $this->orderService->ordersDisplay($orders);
 
             return $this->json(['orders' => $dataOrders], Response::HTTP_OK);
         } catch (\Throwable $e) {

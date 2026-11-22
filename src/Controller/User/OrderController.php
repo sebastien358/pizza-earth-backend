@@ -6,7 +6,6 @@ use App\Entity\Order;
 use App\Entity\OrderItem;
 use App\Entity\Product;
 use App\Enum\OrderStatus;
-use App\Form\OrderType;
 use App\Services\OrderService;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
@@ -17,7 +16,6 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapQueryParameter;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
-use Symfony\Component\Serializer\SerializerInterface;
 
 #[Route('/api/user')]
 #[IsGranted('ROLE_USER')]
@@ -35,7 +33,7 @@ class OrderController extends AbstractController
     }
 
     #[Route('/orders', methods: ['GET'])]
-    public function index(#[MapQueryParameter] int $current = 1, #[MapQueryParameter] int $limit = 4, SerializerInterface $serializer): Response
+    public function index(#[MapQueryParameter] int $current = 1, #[MapQueryParameter] int $limit = 4): Response
     {
         try {
             $user = $this->getUser();
@@ -47,7 +45,7 @@ class OrderController extends AbstractController
             if ($limit <= 0) $limit = 2;
 
             $orders = $this->entityManager->getRepository(Order::class)->findAllUserOrders($user, $current, $limit);
-            $dataOrders = $this->orderService->ordersDisplay($orders, $serializer);
+            $dataOrders = $this->orderService->ordersDisplay($orders);
 
             $countOrders = $this->entityManager->getRepository(Order::class)->countOrderUser($user);
 
