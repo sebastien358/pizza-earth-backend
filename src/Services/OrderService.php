@@ -6,7 +6,7 @@ use App\Repository\OrderRepository;
 
 class OrderService
 {
-    public function ordersDisplay($serializer, $orders)
+    public function ordersDisplay($orders, $serializer)
     {
         if (is_array($orders)) {
             $dataOrders = $serializer->normalize($orders, 'json', ['groups' => ['orders', 'items', 'products', 'user'],

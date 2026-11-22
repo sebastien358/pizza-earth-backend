@@ -17,11 +17,13 @@ class OrderRepository extends ServiceEntityRepository
         parent::__construct($registry, Order::class);
     }
 
-    public function findAllUserOrders(User $user)
+    public function findAllUserOrders(User $user, int $current, int $limit)
     {
         return $this->createQueryBuilder('o')
             ->where('o.user = :user')
             ->setParameter('user', $user)
+            ->setFirstResult(($current - 1) * $limit)
+            ->setMaxResults($limit)
             ->orderBy('o.createdAt', 'DESC')
             ->getQuery()
             ->getResult();
@@ -37,13 +39,13 @@ class OrderRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    public function findAllAdminOrdersSearch(string $search)
+    public function findAllAdminOrdersSearch(string $searchParams)
     {
         return $this->createQueryBuilder('o')
             ->where('LOWER(o.name) LIKE :search')
             ->orWhere('LOWER(o.email) LIKE :search')
             ->orWhere('LOWER(o.phone) LIKE :search')
-            ->setParameter('search', '%' . strtolower($search) . '%')
+            ->setParameter('search', '%' . strtolower($searchParams) . '%')
             ->orderBy('o.createdAt', 'DESC')
             ->getQuery()
             ->getResult();
@@ -53,6 +55,16 @@ class OrderRepository extends ServiceEntityRepository
     {
         return $this->createQueryBuilder('o')
             ->select('COUNT(o.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    public function countOrderUser($user)
+    {
+        return $this->createQueryBuilder('o')
+            ->select('COUNT(o.id)')
+            ->where('o.user = :user')
+            ->setParameter('user', $user)
             ->getQuery()
             ->getSingleScalarResult();
     }

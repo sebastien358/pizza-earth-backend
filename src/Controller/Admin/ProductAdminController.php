@@ -12,6 +12,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Attribute\MapQueryParameter;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Serializer\SerializerInterface;
 
@@ -34,16 +35,13 @@ class ProductAdminController extends AbstractController
     }
 
     #[Route('/list', methods: ['GET'])]
-    public function index(Request $request, SerializerInterface $serializer): Response
+    public function index(#[MapQueryParameter(name: 'current')] int $current = 1, #[MapQueryParameter(name: 'limit')] int $limit = 4,Request $request, SerializerInterface $serializer): Response
     {
         try {
             $user = $this->getUser();
             if (!$user) {
                 return $this->json(['error' => 'Utilisateur introuvable'], Response::HTTP_UNAUTHORIZED);
             }
-
-            $current = $request->query->getInt('current');
-            $limit = $request->query->getInt('limit');
 
             if ($current < 1) $current = 1;
             if ($limit <= 0) $limit = 4;
@@ -66,7 +64,7 @@ class ProductAdminController extends AbstractController
     }
 
     #[Route('/search', methods: ['GET'])]
-    public function search(Request $request, SerializerInterface $serializer): Response
+    public function search(#[MapQueryParameter(name: 'search')] string $search = "", Request $request, SerializerInterface $serializer): Response
     {
         try {
             $user = $this->getUser();
@@ -74,10 +72,9 @@ class ProductAdminController extends AbstractController
                 return $this->json(['error' => 'Utilisateur introuvable'], Response::HTTP_UNAUTHORIZED);
             }
 
-            $searchProducts = $request->query->getString('search');
-            $search = strtolower($searchProducts);
+            $searchParams = strtolower($search);
 
-            $products = $this->entityManager->getRepository(Product::class)->findAllSearch($search);
+            $products = $this->entityManager->getRepository(Product::class)->findAllSearch($searchParams);
             $dataProducts = $this->productService->productDisplay($request, $serializer, $products);
 
             return $this->json($dataProducts, Response::HTTP_OK);

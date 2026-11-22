@@ -8,19 +8,14 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Mapping\HasLifecycleCallbacks;
 use Symfony\Component\Serializer\Attribute\Groups;
+use App\Enum\OrderStatus;
+use App\Enum\DeliveryMode;
 
 #[ORM\Entity(repositoryClass: OrderRepository::class)]
 #[ORM\Table(name: '`order`')]
 #[HasLifecycleCallbacks]
 class Order
 {
-    public const STATUS_PENDING = 'pending';
-    public const STATUS_VALIDATED = 'validated';
-    public const STATUS_CANCELLED = 'cancelled';
-
-    public const DELIVERY_MODE_DELIVERY = 'delivery'; // Livraison
-    public const DELIVERY_MODE_PICKUP = 'pickup';     // Retrait
-
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -65,7 +60,7 @@ class Order
 
     #[ORM\Column(length: 20)]
     #[Groups(['orders', 'user', 'items'])]
-    private ?string $status = self::STATUS_PENDING;
+    private ?OrderStatus $status = OrderStatus::PENDING;
 
     #[ORM\Column(type: 'float')]
     #[Groups(['orders', 'user', 'items'])]
@@ -213,12 +208,12 @@ class Order
         return $this;
     }
 
-    public function getStatus(): ?string
+    public function getStatus(): ?OrderStatus
     {
         return $this->status;
     }
 
-    public function setStatus(string $status): self
+    public function setStatus(OrderStatus $status): self
     {
         $this->status = $status;
 

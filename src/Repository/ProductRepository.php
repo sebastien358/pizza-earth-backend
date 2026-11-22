@@ -47,11 +47,11 @@ class ProductRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    public function findAllSearch(string $search)
+    public function findAllSearch(string $searchParams)
     {
         return $this->createQueryBuilder('p')
             ->where('LOWER(p.name) LIKE :search')
-            ->setParameter('search', '%' . strtolower($search) . '%')
+            ->setParameter('search', '%' . strtolower($searchParams) . '%')
             ->getQuery()
             ->getResult();
     }

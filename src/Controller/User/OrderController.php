@@ -5,6 +5,7 @@ namespace App\Controller\User;
 use App\Entity\Order;
 use App\Entity\OrderItem;
 use App\Entity\Product;
+use App\Enum\OrderStatus;
 use App\Form\OrderType;
 use App\Services\OrderService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -13,6 +14,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Attribute\MapQueryParameter;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Serializer\SerializerInterface;
@@ -33,7 +35,7 @@ class OrderController extends AbstractController
     }
 
     #[Route('/orders', methods: ['GET'])]
-    public function index(SerializerInterface $serializer): Response
+    public function index(#[MapQueryParameter] int $current = 1, #[MapQueryParameter] int $limit = 4, SerializerInterface $serializer): Response
     {
         try {
             $user = $this->getUser();
@@ -41,14 +43,20 @@ class OrderController extends AbstractController
                 return $this->json(['erreur' => 'Utilisateur introuvable'], Response::HTTP_UNAUTHORIZED);
             }
 
-            $orders = $this->entityManager->getRepository(Order::class)->findAllUserOrders($user);
-            if (!$orders) {
-                return $this->json(['error' => 'Aucune commandes'], Response::HTTP_BAD_REQUEST);
-            }
+            if ($current < 1) $current = 1;
+            if ($limit <= 0) $limit = 2;
 
-            $dataOrders = $this->orderService->ordersDisplay($serializer, $orders);
+            $orders = $this->entityManager->getRepository(Order::class)->findAllUserOrders($user, $current, $limit);
+            $dataOrders = $this->orderService->ordersDisplay($orders, $serializer);
 
-            return $this->json($dataOrders, Response::HTTP_OK);
+            $countOrders = $this->entityManager->getRepository(Order::class)->countOrderUser($user);
+
+            return $this->json([
+                'orders' =>  $dataOrders,
+                'count' => (int) $countOrders,
+                'pages' => (int) ceil($countOrders / $limit)
+            ], Response::HTTP_OK);
+
         } catch (\Throwable $e) {
             $this->logger->error('Erreur de la récupération des commandes: ', [$e->getMessage()]);
             return $this->json(['erreur' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -104,7 +112,7 @@ class OrderController extends AbstractController
             $totalPayment = $total + $deliveryPrice;
 
             $order->setTotal($totalPayment);
-            $order->setStatus(Order::STATUS_PENDING);
+            $order->setStatus(OrderStatus::PENDING);
 
             $this->entityManager->persist($order);
             $this->entityManager->flush();
