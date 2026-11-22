@@ -20,9 +20,14 @@ class Picture
     private ?string $url = null;
 
     #[ORM\ManyToOne(targetEntity: Product::class, inversedBy: 'pictures')]
-    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'CASCADE')]
     #[Groups(['picture'])]
     private ?Product $product = null;
+
+    #[ORM\ManyToOne(targetEntity: Testimonial::class, inversedBy: 'pictures')]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'CASCADE')]
+    #[Groups(['picture'])]
+    private ?Testimonial $testimonial = null;
 
     public function getId(): ?int
     {
@@ -49,6 +54,18 @@ class Picture
     public function setProduct(?Product $product): self
     {
         $this->product = $product;
+
+        return $this;
+    }
+
+    public function getTestimonial(): ?Testimonial
+    {
+        return $this->testimonial;
+    }
+
+    public function setTestimonial(?Testimonial $testimonial): self
+    {
+        $this->testimonial = $testimonial;
 
         return $this;
     }
