@@ -50,6 +50,44 @@ class TestimonialRepository extends ServiceEntityRepository
         return $avg ? round((float) $avg, 1) : 0.0;
     }
 
+    public function findAllTestimonialsAdmin(int $current, int $limit)
+    {
+        return $this->createQueryBuilder('t')
+            ->setFirstResult(($current - 1) * $limit)
+            ->setMaxResults($limit)
+            ->orderBy('t.id', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function testimonialSearchAdmin(string $searchTerm)
+    {
+        return $this->createQueryBuilder('t')
+            ->where('LOWER(t.name) LIKE :search')
+            ->setParameter('search', '%' . strtolower($searchTerm ). '%')
+            ->orderBy('t.id', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function countTestimonialsAdmin()
+    {
+        return $this->createQueryBuilder('t')
+            ->select('COUNT(t.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    public function getAverageRatingAdmin(): float
+    {
+        $avg = $this->createQueryBuilder('t')
+            ->select('AVG(t.rating)')
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return $avg ? round((float) $avg, 1) : 0.0;
+    }
+
 //    /**
 //     * @return Testimonial[] Returns an array of Testimonial objects
 //     */
