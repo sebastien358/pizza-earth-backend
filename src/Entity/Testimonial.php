@@ -6,6 +6,7 @@ use App\Repository\TestimonialRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: TestimonialRepository::class)]
 class Testimonial
@@ -13,21 +14,31 @@ class Testimonial
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['testimonials', 'testimonial'])]
     private ?int $id = null;
 
     #[ORM\Column(type: 'integer')]
+    #[Groups(['testimonials', 'testimonial'])]
     private ?int $rating = null;
 
     #[ORM\Column(type: 'string', length: 50)]
+    #[Groups(['testimonials', 'testimonial'])]
     private ?string $name;
 
     #[ORM\Column(type: 'string', length: 50)]
+    #[Groups(['testimonials', 'testimonial'])]
     private ?string $pizza;
 
     #[ORM\Column(type: 'text')]
+    #[Groups(['testimonials', 'testimonial'])]
     private ?string $message;
 
+    #[ORM\Column(type: 'boolean', options: ['default' => false])]
+    #[Groups(['testimonials', 'testimonial'])]
+    private ?bool $isPublished = false;
+
     #[ORM\OneToMany(targetEntity: Picture::class, mappedBy: 'testimonial', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    #[Groups(['testimonials', 'testimonial'])]
     private Collection $pictures;
 
     public function __construct()
@@ -84,6 +95,18 @@ class Testimonial
     public function setMessage(string $message): self
     {
         $this->message = $message;
+
+        return $this;
+    }
+
+    public function getIsPublished(): ?bool
+    {
+        return $this->isPublished;
+    }
+
+    public function setIsPublished(bool $isPublished): self
+    {
+        $this->isPublished = $isPublished;
 
         return $this;
     }

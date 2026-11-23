@@ -61,8 +61,8 @@ class ProductService
     {
         if (!$image) return null;
 
-        if ($image->getSize() > 5 * 1024 * 1024) {
-            throw new \Exception('La taille de l\'image est trop grande'. $image->getClientOriginalName());
+        if ($image->getSize() > 2 * 1024 * 1024) {
+            throw new \Exception('La taille de l\'image est trop grande');
         }
 
         $img = $this->uploadFileService->upload($image);
@@ -70,7 +70,7 @@ class ProductService
         $picture = new Picture();
         $picture->setUrl($img);
         $picture->setProduct($product);
-        $product->addPicture($picture);
+        $product->addPicture($product);
         $this->entityManager->persist($picture);
     }
 }

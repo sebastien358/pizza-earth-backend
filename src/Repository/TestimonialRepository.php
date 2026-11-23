@@ -16,6 +16,40 @@ class TestimonialRepository extends ServiceEntityRepository
         parent::__construct($registry, Testimonial::class);
     }
 
+    public function findAllTestimonials(int $current, int $limit)
+    {
+        return $this->createQueryBuilder('t')
+            //->where('t.isPublished = :isPublished')
+            //->setParameter('isPublished', true)
+            ->orderBy('t.id', 'DESC')
+            ->setFirstResult(($current - 1) * $limit)
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function countPublishedTestimonials(): int
+    {
+        return (int) $this->createQueryBuilder('t')
+            ->select('COUNT(t.id)')
+            //->where('t.isPublished = :isPublished')
+            //->setParameter('isPublished', true)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    public function getAverageRating(): float
+    {
+        $avg = $this->createQueryBuilder('t')
+            ->select('AVG(t.rating)')
+            //->where('t.isPublished = :isPublished')
+            //->setParameter('isPublished', true)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return $avg ? round((float) $avg, 1) : 0.0;
+    }
+
 //    /**
 //     * @return Testimonial[] Returns an array of Testimonial objects
 //     */
