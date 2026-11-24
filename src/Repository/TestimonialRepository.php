@@ -19,8 +19,8 @@ class TestimonialRepository extends ServiceEntityRepository
     public function findAllTestimonials(int $current, int $limit)
     {
         return $this->createQueryBuilder('t')
-            //->where('t.isPublished = :isPublished')
-            //->setParameter('isPublished', true)
+            ->where('t.isPublished = :isPublished')
+            ->setParameter('isPublished', true)
             ->orderBy('t.id', 'DESC')
             ->setFirstResult(($current - 1) * $limit)
             ->setMaxResults($limit)
@@ -32,8 +32,8 @@ class TestimonialRepository extends ServiceEntityRepository
     {
         return (int) $this->createQueryBuilder('t')
             ->select('COUNT(t.id)')
-            //->where('t.isPublished = :isPublished')
-            //->setParameter('isPublished', true)
+            ->where('t.isPublished = :isPublished')
+            ->setParameter('isPublished', true)
             ->getQuery()
             ->getSingleScalarResult();
     }
@@ -42,8 +42,8 @@ class TestimonialRepository extends ServiceEntityRepository
     {
         $avg = $this->createQueryBuilder('t')
             ->select('AVG(t.rating)')
-            //->where('t.isPublished = :isPublished')
-            //->setParameter('isPublished', true)
+            ->where('t.isPublished = :isPublished')
+            ->setParameter('isPublished', true)
             ->getQuery()
             ->getSingleScalarResult();
 
