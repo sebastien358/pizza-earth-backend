@@ -4,12 +4,14 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Form\UserType;
+use App\Services\MailerProvider;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
 
@@ -18,13 +20,16 @@ final class UserController extends AbstractController
 {
     private EntityManagerInterface $entityManager;
     private UserPasswordHasherInterface $passwordHasher;
+    private MailerProvider $mailerProvider;
     private LoggerInterface $logger;
 
     public function __construct(
-        EntityManagerInterface $entityManager, UserPasswordHasherInterface $passwordHasher, LoggerInterface $logger
+        EntityManagerInterface $entityManager, UserPasswordHasherInterface $passwordHasher,
+        MailerProvider$mailerProvider, LoggerInterface $logger
     ) {
         $this->entityManager = $entityManager;
         $this->passwordHasher = $passwordHasher;
+        $this->mailerProvider = $mailerProvider;
         $this->logger = $logger;
     }
 
@@ -72,6 +77,9 @@ final class UserController extends AbstractController
 
             $this->entityManager->persist($user);
             $this->entityManager->flush();
+
+            $this->mailerProvider->registerEmailPizzeria($user);
+            $this->mailerProvider->registerEmailClient($user);
 
             return $this->json(['message' => 'L\'inscription a réussie'], Response::HTTP_OK);
         } catch (\Throwable $e) {

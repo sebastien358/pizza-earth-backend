@@ -26,9 +26,11 @@ class AccountUser extends AbstractController
         try {
             $user = $this->getUser();
 
-            $data = $serializer->normalize($user, 'json', ['groups' => ['user'], 'circular_reference_handler' => function ($object) {
-                return $object->getId();
-            }]);
+            $data = $serializer->normalize($user, 'json', ['groups' => ['user'],
+                'circular_reference_handler' => function ($object) {
+                    return $object->getId();
+                }
+            ]);
 
             return $this->json($data, Response::HTTP_OK);
         } catch (\Throwable $e) {

@@ -6,6 +6,7 @@ use App\Entity\Order;
 use App\Entity\OrderItem;
 use App\Entity\Product;
 use App\Enum\OrderStatus;
+use App\Services\MailerProvider;
 use App\Services\OrderService;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
@@ -24,12 +25,14 @@ class OrderController extends AbstractController
     private EntityManagerInterface $entityManager;
     private OrderService $orderService;
     private LoggerInterface $logger;
+    private MailerProvider $mailerProvider;
 
-    public function __construct(EntityManagerInterface $entityManager, OrderService $orderService, LoggerInterface $logger)
+    public function __construct(EntityManagerInterface $entityManager, OrderService $orderService, LoggerInterface $logger, MailerProvider $mailerProvider)
     {
         $this->entityManager = $entityManager;
         $this->orderService = $orderService;
         $this->logger = $logger;
+        $this->mailerProvider = $mailerProvider;
     }
 
     #[Route('/orders', methods: ['GET'])]
@@ -114,6 +117,9 @@ class OrderController extends AbstractController
 
             $this->entityManager->persist($order);
             $this->entityManager->flush();
+
+            $this->mailerProvider->orderEmailPizzeria($order);
+            $this->mailerProvider->orderEmailClient($order);
 
             return $this->json(['message' => 'La commande a été validée'], Response::HTTP_CREATED);
         } catch (\Throwable $e) {
