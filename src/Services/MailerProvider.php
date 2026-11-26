@@ -9,7 +9,10 @@ use function Symfony\Component\String\u;
 
 class MailerProvider
 {
-    public function __construct(private MailerInterface $mailer, private Environment $twig, private string $emailFrom
+    public function __construct(
+        private MailerInterface $mailer,
+        private Environment $twig,
+        private string $emailFrom
     ) {
     }
 
@@ -80,5 +83,14 @@ class MailerProvider
             'items' => $order->getOrderItems(),
         ]);
         $this->sendEmail($order->getEmail(), 'Ta commande Pizza Earth #' . $order->getId() . ' est confirmée', $body);
+    }
+
+    public function requestPassword($user, $url): void
+    {
+        $body = $this->twig->render('emails/requestPassword.html.twig', [
+            'name' => $user->getFirstname() . ' ' . $user->getLastname(),
+            'url' => $url
+        ]);
+        $this->sendEmail($user->getEmail(), 'Demande de rénitialisation de mot de passe', $body);
     }
 }

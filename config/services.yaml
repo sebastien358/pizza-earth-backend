@@ -9,7 +9,8 @@
 parameters:
     image_directory: "%kernel.project_dir%/public/images"
     stripe_key: "%env(STRIPE_SECRET_KEY)%"
-    email_from: '%env(EMAIL_FROM)%'
+    email_from: "%env(EMAIL_FROM)%"
+    frontend_url: "%env(FRONTEND_URL)%"
 
 services:
     # default configuration for services in *this* file

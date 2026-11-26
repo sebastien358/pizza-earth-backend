@@ -11,7 +11,6 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
 
@@ -84,6 +83,73 @@ final class UserController extends AbstractController
             return $this->json(['message' => 'L\'inscription a réussie'], Response::HTTP_OK);
         } catch (\Throwable $e) {
             $this->logger->error('Erreur de l\'inscription : ', [$e->getMessage()]);
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    #[Route('/request/password', methods: ['POST'])]
+    public function request(Request $request): Response
+    {
+        try {
+            $data = json_decode($request->getContent(), true, 512, JSON_THROW_ON_ERROR);
+
+            $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $data['email']]);
+            if (!$user) {
+                return $this->json(['type' => 'ERROR_REQUEST_PASSWORD', 'message' => 'Aucun compte avec cet email'], Response::HTTP_CONFLICT);
+            }
+
+            $token = bin2hex(random_bytes(32));
+            $user->setResetToken($token);
+            $user->setResetTokenExpiresAt(new \DateTimeImmutable('+1 hour'));
+
+            $this->entityManager->persist($user);
+            $this->entityManager->flush();
+
+            $url = $this->getParameter('frontend_url') . '/reset-password/' . $token;
+            $this->mailerProvider->requestPassword($user, $url);
+
+            return $this->json(['message' => 'Un mail de résilation vous a été envoyé'], Response::HTTP_OK);
+        } catch (\Throwable $e) {
+            $this->logger->error('Erreur email de réinitialisation : ', [$e->getMessage()]);
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    #[Route('/reset/password/{token}', methods: ['POST'])]
+    public function reset(string $token, Request $request): Response
+    {
+        try {
+            $data = json_decode($request->getContent(), true, 512, JSON_THROW_ON_ERROR);
+            $password = $data['password'] ?? null;
+
+            if (!$token) {
+                return $this->json(['error' => 'Le token n\'existe pas'], Response::HTTP_NOT_FOUND);
+            }
+
+            if (!$password) {
+                return $this->json(['error' => 'Le mot de passe est manquant'], Response::HTTP_NOT_FOUND);
+            }
+
+            $user = $this->entityManager->getRepository(User::class)->findOneBy(['resetToken' => $token]);
+            if (!$user) {
+                return $this->json(['error' => 'L\'utilisateur n\'existe pas'], Response::HTTP_NOT_FOUND);
+            }
+
+            if ($user->getResetTokenExpiresAt() < new \DateTimeImmutable()) {
+                $user->setResetToken(null);
+                $user->setResetTokenExpiresAt(null);
+                $this->entityManager->flush();
+                return $this->json(['type' => 'ERROR_RESET_PASSWORD', 'message' => 'Le lien de réinitialisation a expiré'], Response::HTTP_CONFLICT);
+            }
+
+            $user->setPassword($this->passwordHasher->hashPassword($user, $password));
+            $user->setResetToken(null);
+            $user->setResetTokenExpiresAt(null);
+            $this->entityManager->flush();
+
+            return $this->json(['message' => 'Le mot de passe a été modifié'], Response::HTTP_OK);
+        } catch (\Throwable $e) {
+            $this->logger->error('Erreur email de réinitialisation : ', [$e->getMessage()]);
             return $this->json(['error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

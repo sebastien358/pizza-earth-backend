@@ -40,6 +40,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Groups('user')]
     private ?bool $terms = false;
 
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    #[Groups('user')]
+    public ?string $resetToken = null;
+
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    #[Groups('user')]
+    public ?\DateTimeImmutable $resetTokenExpiresAt = null;
+
     /**
      * @var list<string> The user roles
      */
@@ -122,6 +130,30 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setTerms(bool $terms): static
     {
         $this->terms = $terms;
+
+        return $this;
+    }
+
+    public function getResetToken(): ?string
+    {
+        return $this->resetToken;
+    }
+
+    public function setResetToken(?string $resetToken): static
+    {
+        $this->resetToken = $resetToken;
+
+        return $this;
+    }
+
+    public function getResetTokenExpiresAt(): ?\DateTimeImmutable
+    {
+        return $this->resetTokenExpiresAt;
+    }
+
+    public function setResetTokenExpiresAt(?\DateTimeImmutable $resetTokenExpiresAt): static
+    {
+        $this->resetTokenExpiresAt = $resetTokenExpiresAt;
 
         return $this;
     }
