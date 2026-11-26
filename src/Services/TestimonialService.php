@@ -58,7 +58,6 @@ class TestimonialService
         $picture = new Picture();
         $picture->setUrl($newFile);
         $picture->setTestimonial($testimonial);
-        $this->entityManager->persist($testimonial);
         $this->entityManager->persist($picture);
     }
 }

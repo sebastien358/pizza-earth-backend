@@ -73,6 +73,7 @@ class TestimonialController extends AbstractController
             $image = $request->files->get('picture') ?? null;
             $this->testimonialService->testimonialImage($testimonial, $image);
 
+            $this->entityManager->persist($testimonial);
             $this->entityManager->flush();
 
             return $this->json(['message' => 'L\'avis a été ajouté'], Response::HTTP_CREATED);

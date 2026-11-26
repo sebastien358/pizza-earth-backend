@@ -9,6 +9,7 @@
 parameters:
     image_directory: "%kernel.project_dir%/public/images"
     stripe_key: "%env(STRIPE_SECRET_KEY)%"
+    email_from: '%env(EMAIL_FROM)%'
 
 services:
     # default configuration for services in *this* file
@@ -24,6 +25,10 @@ services:
     App\Services\UploadFileService:
         arguments:
             $targetDirectory: '%image_directory%'
+
+    App\Services\MailerProvider:
+        arguments:
+            $emailFrom: '%email_from%'
 
     App\Controller\User\PaymentController:
         arguments:

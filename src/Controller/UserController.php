@@ -6,13 +6,12 @@ use App\Entity\User;
 use App\Form\UserType;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Serializer\SerializerInterface;
 
 #[Route('/api')]
 final class UserController extends AbstractController
@@ -29,18 +28,41 @@ final class UserController extends AbstractController
         $this->logger = $logger;
     }
 
+    #[Route('/existed', methods: ['POST'])]
+    public function exist(Request $request): Response
+    {
+        try {
+            $data = json_decode($request->getContent(), true, 512, JSON_THROW_ON_ERROR);
+
+            $userExisted = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $data['email']]);
+            if (!$userExisted) {
+                return $this->json(['type' => 'ERROR_USER_EXISTING', 'message' => 'Aucun compte ne correspond à cet email'], Response::HTTP_CONFLICT);
+            }
+
+            return $this->json(null, Response::HTTP_OK);
+        } catch (\Throwable $e) {
+            $this->logger->error('Erreur de la vérification login : ', [$e->getMessage()]);
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     #[Route('/register', methods: ['POST'])]
     public function register(Request $request): Response
     {
         try {
             $data = json_decode($request->getContent(), true, 512, JSON_THROW_ON_ERROR);
 
+            $userExisted = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $data['email']]);
+            if ($userExisted) {
+                return $this->json(['type' => 'ERROR_USER_EXISTING', 'message' => 'Un compte existe déjà avec cet email'], Response::HTTP_CONFLICT);
+            }
+
             $user = new User();
 
             $form = $this->createForm(UserType::class, $user);
             $form->submit($data, false);
 
-            if (!$form->isSubmitted() && !$form->isValid()) {
+            if (!$form->isSubmitted() || !$form->isValid()) {
                 $errors = $this->getErrorMessages($form);
                 return $this->json(['errors' => $errors], Response::HTTP_BAD_REQUEST);
             }
